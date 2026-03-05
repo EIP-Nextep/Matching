@@ -1,0 +1,10 @@
+name: Alerte Discord
+on:
+  pull_request:
+    types: [review_requested]
+
+jobs:
+  call-discord-bot:
+    uses: EIP-Nextep/.github/.github/workflows/discord-ping.yml@main
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
