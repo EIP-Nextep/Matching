@@ -1,0 +1,11 @@
+name: Trigger - Move Issue to Review
+
+on:
+  pull_request_target:
+    types: [opened, ready_for_review]
+
+jobs:
+  call-central-workflow:
+    uses: EIP-Nextep/.github/.github/workflows/move_issue_to_review.yml@main
+    secrets:
+      ORG_PROJECT_TOKEN: ${{ secrets.ORG_PROJECT_TOKEN }}

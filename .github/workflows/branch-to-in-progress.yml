@@ -1,0 +1,45 @@
+name: Trigger - Move Issue to In Progress
+
+on:
+  create: # Se déclenche quand une nouvelle branche est créée
+
+jobs:
+  move-to-in-progress:
+    # On s'assure que c'est bien une création de branche (et pas un tag)
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Extraire le numéro de l'issue
+        id: extract
+        run: |
+          BRANCH_NAME="${{ github.event.ref }}"
+          # Si le nom de la branche commence par un nombre suivi d'un tiret
+          if [[ "$BRANCH_NAME" =~ ^([0-9]+)- ]]; then
+            echo "issue_number=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+            echo "Numéro d'issue trouvé : #${BASH_REMATCH[1]}"
+          else
+            echo "issue_number=" >> $GITHUB_OUTPUT
+            echo "Pas de numéro d'issue lié."
+          fi
+
+      - name: Trouver l'ID caché de l'Issue
+        id: get_id
+        # Ne s'exécute que si on a trouvé un numéro à l'étape d'avant
+        if: steps.extract.outputs.issue_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.ORG_PROJECT_TOKEN }}
+        run: |
+          # Utilise le terminal GitHub pour récupérer le vrai ID de la carte
+          NODE_ID=$(gh issue view ${{ steps.extract.outputs.issue_number }} --repo ${{ github.repository }} --json id -q .id)
+          echo "node_id=$NODE_ID" >> $GITHUB_OUTPUT
+
+      - name: Déplacer la carte dans In Progress
+        if: steps.get_id.outputs.node_id != ''
+        uses: leonsteinhaeuser/project-beta-automations@v2.2.1
+        with:
+          gh_token: ${{ secrets.ORG_PROJECT_TOKEN }}
+          organization: 'EIP-Nextep'
+          project_id: 3
+          resource_node_id: ${{ steps.get_id.outputs.node_id }}
+          status_value: '🏗 In progress'

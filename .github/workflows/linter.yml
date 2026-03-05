@@ -1,0 +1,26 @@
+name: Linter Check
+
+on:
+  pull_request: 
+    branches: [ "main", "dev" ]
+
+jobs:
+  eslint:
+    name: Run ESLint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+          cache: 'npm' 
+
+      - name: Installation des dépendances
+        run: npm ci 
+
+      - name: Lancement du Linter
+        run: npm run lint
