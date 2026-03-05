@@ -30,6 +30,6 @@ jobs:
           destination-repository-name: 'G-EIP-600-PAR-6-1-eip-5' 
           user-email: ${{ github.actor }}@users.noreply.github.com
           
-          target-directory: 'test_workflows' 
+          target-directory: 'Matching' 
           
           target-branch: 'main'
