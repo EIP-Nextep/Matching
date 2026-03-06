@@ -28,4 +28,4 @@ Pour lancer le serveur avec un rechargement à chaud :
 npm run start:dev
 ```
 
-> Par défaut, l'application écoute sur le port **3003**, mais il peut être surchargé via la variable d'environnement `PORT`.
+> Par défaut, l'application écoute sur le port **3002**, mais il peut être surchargé via la variable d'environnement `PORT`.
