@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model StudentProfile {
+  id          String       @id @default(uuid())
+  userId      String       @unique
+  
+  quizAnswers QuizAnswer[]
+  results     Result[]
+}
+
+model Dimension {
+  id              String            @id @default(uuid())
+  name            String            @unique
+  questions       Question[]
+  metierRelations MetierDimension[]
+}
+
+model Question {
+  id          String    @id @default(uuid())
+  question    String
+  dimensionId String
+  dimension   Dimension @relation(fields: [dimensionId], references: [id])
+  quizAnswers QuizAnswer[]
+}
+
+
+model Metier {
+  id         String            @id @default(uuid())
+  name       String
+  domainId   String
+  domain     Domain            @relation(fields: [domainId], references: [id])
+  dimensions MetierDimension[]
+  results    Result[]
+}
+
+model MetierDimension {
+  id          String    @id @default(uuid())
+  metierId    String
+  metier      Metier    @relation(fields: [metierId], references: [id])
+  dimensionId String
+  dimension   Dimension @relation(fields: [dimensionId], references: [id])
+  score       Int
+}
+
+model Domain {
+  id      String   @id @default(uuid())
+  name    String   @unique
+  metiers Metier[]
+}
+
+model QuizAnswer {
+  id         String         @id @default(uuid())
+  studentId  String
+  student    StudentProfile @relation(fields: [studentId], references: [id])
+  questionId String
+  question   Question       @relation(fields: [questionId], references: [id])
+  value      Int
+}
+
+model Result {
+  id        String         @id @default(uuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+  metierId  String
+  metier    Metier         @relation(fields: [metierId], references: [id])
+  score     Int
+}
