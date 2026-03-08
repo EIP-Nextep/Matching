@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,7 +9,6 @@ datasource db {
 model StudentProfile {
   id          String       @id @default(uuid())
   userId      String       @unique
-  
   quizAnswers QuizAnswer[]
   results     Result[]
 }
@@ -24,17 +17,37 @@ model Dimension {
   id              String            @id @default(uuid())
   name            String            @unique
   questions       Question[]
+  options         Option[]
   metierRelations MetierDimension[]
 }
 
 model Question {
-  id          String    @id @default(uuid())
-  question    String
-  dimensionId String
-  dimension   Dimension @relation(fields: [dimensionId], references: [id])
+  id          String       @id @default(uuid())
+  text        String       // Le libellé de la question
+  category    String?      // "Aspirations", "Stress"
+  order       Int          @unique // Pour l'ordre d'affichage
+  imageUrl    String?      @default("/Quiz.png")
+  
+  options     Option[]     // Une question a plusieurs choix possibles
   quizAnswers QuizAnswer[]
+
+  // Relation avec Dimension (si tu veux garder une dimension principale par question)
+  dimensionId String
+  dimension   Dimension    @relation(fields: [dimensionId], references: [id])
 }
 
+model Option {
+  id            String    @id @default(uuid())
+  letter        String    // "A", "B", "C", "D"
+  title         String    // "Le leader organisé"
+  description   String?   // "Je planifie, distribue les tâches..."
+  
+  questionId    String
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  dimensionName String
+  dimension     Dimension @relation(fields: [dimensionName], references: [name])
+}
 
 model Metier {
   id         String            @id @default(uuid())
