@@ -25,3 +25,7 @@ lerna-debug.log*
 
 # vscode
 .vscode/
+
+# prisma
+.env
+generated/
