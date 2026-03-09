@@ -1,32 +1,41 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { config } from 'dotenv';
+
+config();
 
 const connectionString = process.env.DATABASE_URL;
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter, log: ['query', 'info', 'warn', 'error'] });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('--- Début du Seed ---');
 
+  // 1. Nettoyage (Ordre crucial pour respecter les clés étrangères)
+  await prisma.metierDimension.deleteMany({});
+  await prisma.metier.deleteMany({});
+  await prisma.domain.deleteMany({});
   await prisma.option.deleteMany({});
   await prisma.question.deleteMany({});
   await prisma.dimension.deleteMany({});
 
-  const dimensions = [
+  const dimensionNames = [
     "ouverture", "conscienciosite", "extraversion", "agreabilite",
     "stabilite_emotionnelle", "realiste", "investigateur",
-    "artistique", "social", "entreprenant", "conventionnel", "motivation"
+    "artistique", "social", "entreprenant", "conventionnel", "motivation",
+    "patience", "logique"
   ];
 
   const createdDimensions: Record<string, any> = {};
-  for (const name of dimensions) {
+  for (const name of dimensionNames) {
     const dim = await prisma.dimension.create({ data: { name } });
     createdDimensions[name] = dim;
   }
 
-  // 3. Liste des Questions
+  const dimMap = new Map(Object.entries(createdDimensions).map(([key, val]) => [key, val.id]));
+
   const fullQuestions = [
     {
       order: 1, category: "Aspirations",
@@ -200,7 +209,7 @@ async function main() {
         category: qData.category,
         order: qData.order,
         imageUrl: "/Quiz.png",
-        dimensionId: createdDimensions[qData.dimensionName].id,
+        dimensionId: dimMap.get(qData.dimensionName)!,
         options: {
           create: qData.options.map(o => ({
             letter: o.letter,
@@ -212,7 +221,38 @@ async function main() {
     });
   }
 
-  console.log('--- Seed Terminé : 13 questions insérées ---');
+  const domain = await prisma.domain.create({ data: { name: "Général" } });
+
+  const jobs = [
+    { name: "Médecin", dims: { "social": 10, "investigateur": 8 } },
+    { name: "Entrepreneur", dims: { "entreprenant": 10, "extraversion": 7 } },
+    { name: "Psychologue", dims: { "social": 10, "stabilite_emotionnelle": 9 } },
+    { name: "Manager", dims: { "entreprenant": 10, "extraversion": 6 } },
+    { name: "Designer", dims: { "artistique": 10, "ouverture": 8 } },
+    { name: "Ingénieur", dims: { "investigateur": 10, "logique": 9 } },
+    { name: "Kinésithérapeute", dims: { "social": 9, "realiste": 7 } },
+    { name: "Préparateur physique", dims: { "realiste": 10, "social": 6 } },
+    { name: "Ape (Éducateur)", dims: { "social": 10, "patience": 8 } },
+    { name: "Financier", dims: { "conventionnel": 10, "logique": 8 } },
+  ];
+
+  console.log('--- Insertion des métiers ---');
+  for (const job of jobs) {
+    await prisma.metier.create({
+      data: {
+        name: job.name,
+        domainId: domain.id,
+        dimensions: {
+          create: Object.entries(job.dims).map(([dName, dScore]) => ({
+            dimensionId: dimMap.get(dName)!,
+            score: Number(dScore)
+          }))
+        }
+      }
+    });
+  }
+
+  console.log('--- Seed terminé avec succès ! ---');
 }
 
 main()
