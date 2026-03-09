@@ -21,15 +21,22 @@ export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
 
   @Get('questions')
-  @ApiOperation({ summary: 'Récupérer toutes les questions du quiz avec leurs options' })
-  @ApiResponse({ status: 200, description: 'Liste des questions avec dimensions et options' })
+  @ApiOperation({
+    summary: 'Récupérer toutes les questions du quiz avec leurs options',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des questions avec dimensions et options',
+  })
   getQuestions() {
     return this.matchingService.getQuestions();
   }
 
   @Post('calculate')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Calculer le matching à partir des réponses au quiz' })
+  @ApiOperation({
+    summary: 'Calculer le matching à partir des réponses au quiz',
+  })
   @ApiResponse({ status: 200, description: 'Matching calculé avec succès' })
   @ApiResponse({ status: 404, description: 'Étudiant non trouvé' })
   @ApiResponse({ status: 400, description: 'Aucune réponse fournie' })
@@ -40,39 +47,66 @@ export class MatchingController {
   @Get('recommendations/domains/:userId')
   @ApiOperation({ summary: 'Obtenir les domaines recommandés (top 5)' })
   @ApiParam({ name: 'userId', description: "ID de l'utilisateur" })
-  @ApiResponse({ status: 200, description: 'Liste des domaines avec score de compatibilité' })
+  @ApiResponse({
+    status: 200,
+    description: 'Liste des domaines avec score de compatibilité',
+  })
   getRecommendedDomains(@Param('userId') userId: string) {
     return this.matchingService.getRecommendedDomains(userId);
   }
 
   @Get('recommendations/metiers/:userId')
-  @ApiOperation({ summary: 'Obtenir les métiers recommandés (top 10) avec description et dimensions' })
+  @ApiOperation({
+    summary:
+      'Obtenir les métiers recommandés (top 10) avec description et dimensions',
+  })
   @ApiParam({ name: 'userId', description: "ID de l'utilisateur" })
-  @ApiResponse({ status: 200, description: 'Liste des métiers avec score, description, domaine et top dimensions' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Liste des métiers avec score, description, domaine et top dimensions',
+  })
   getRecommendedMetiers(@Param('userId') userId: string) {
     return this.matchingService.getRecommendedMetiers(userId);
   }
 
   @Get('recommendations/schools/:userId')
-  @ApiOperation({ summary: 'Obtenir les écoles recommandées triées par meilleur domaine' })
+  @ApiOperation({
+    summary: 'Obtenir les écoles recommandées triées par meilleur domaine',
+  })
   @ApiParam({ name: 'userId', description: "ID de l'utilisateur" })
-  @ApiResponse({ status: 200, description: "Liste des écoles avec pourcentage de match et domaines couverts" })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Liste des écoles avec pourcentage de match et domaines couverts',
+  })
   getRecommendedSchools(@Param('userId') userId: string) {
     return this.matchingService.getRecommendedSchools(userId);
   }
 
   @Post('interactions/metier')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Liker ou disliker un métier (recalcule les recommandations)' })
-  @ApiResponse({ status: 200, description: 'Interaction enregistrée, recommandations mises à jour' })
+  @ApiOperation({
+    summary: 'Liker ou disliker un métier (recalcule les recommandations)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Interaction enregistrée, recommandations mises à jour',
+  })
   @ApiResponse({ status: 404, description: 'Étudiant ou métier non trouvé' })
   interactMetier(@Body() dto: MetierInteractionDto) {
     return this.matchingService.interactMetier(dto);
   }
 
   @Delete('interactions/metier')
-  @ApiOperation({ summary: "Supprimer une interaction sur un métier (recalcule les recommandations)" })
-  @ApiResponse({ status: 200, description: 'Interaction supprimée, recommandations recalculées' })
+  @ApiOperation({
+    summary:
+      'Supprimer une interaction sur un métier (recalcule les recommandations)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Interaction supprimée, recommandations recalculées',
+  })
   @ApiResponse({ status: 404, description: 'Étudiant non trouvé' })
   removeMetierInteraction(@Body() dto: RemoveInteractionDto) {
     return this.matchingService.removeMetierInteraction(
@@ -82,9 +116,15 @@ export class MatchingController {
   }
 
   @Get('interactions/metiers/:userId')
-  @ApiOperation({ summary: "Lister toutes les interactions (likes/dislikes) d'un utilisateur" })
+  @ApiOperation({
+    summary: "Lister toutes les interactions (likes/dislikes) d'un utilisateur",
+  })
   @ApiParam({ name: 'userId', description: "ID de l'utilisateur" })
-  @ApiResponse({ status: 200, description: 'Liste des interactions avec nom du métier et statut like/dislike' })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Liste des interactions avec nom du métier et statut like/dislike',
+  })
   getMetierInteractions(@Param('userId') userId: string) {
     return this.matchingService.getMetierInteractions(userId);
   }

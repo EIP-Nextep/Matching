@@ -2,6 +2,26 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MatchingService } from './matching.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { AnswerDto } from './dto/matching.dto';
+
+interface StudentDimData {
+  studentId: string;
+  dimensionId: string;
+  normalizedScore: number;
+}
+
+interface ResultData {
+  studentId: string;
+  domainId?: string;
+  metierId?: string;
+  compatibility: number;
+}
+
+function getCreateManyData<T>(mockFn: jest.Mock): T[] {
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+  const raw = mockFn.mock.calls[0][0] as { data: T[] };
+  return raw.data;
+}
 
 const mockPrisma = {
   question: { findMany: jest.fn() },
@@ -209,16 +229,17 @@ describe('MatchingService', () => {
         ],
       });
 
-      const dimData =
-        mockPrisma.studentDimension.createMany.mock.calls[0][0].data;
+      const dimData = getCreateManyData<StudentDimData>(
+        mockPrisma.studentDimension.createMany,
+      );
       expect(dimData).toHaveLength(2);
 
       // Artistic: rawScore=2, maxPossible=3 (distinct questions q1,q2,q3)
-      const artDim = dimData.find((d: any) => d.dimensionId === 'dim-art');
+      const artDim = dimData.find((d) => d.dimensionId === 'dim-art')!;
       expect(artDim.normalizedScore).toBeCloseTo(2 / 3, 5);
 
       // Investigative: rawScore=1, maxPossible=2 (distinct questions q1,q4)
-      const invDim = dimData.find((d: any) => d.dimensionId === 'dim-inv');
+      const invDim = dimData.find((d) => d.dimensionId === 'dim-inv')!;
       expect(invDim.normalizedScore).toBeCloseTo(0.5, 5);
     });
 
@@ -258,8 +279,10 @@ describe('MatchingService', () => {
       });
 
       // normalizedScore=1/1=1.0 → dotProduct=1.0*1.0=1.0 → 100%
-      const resultData = mockPrisma.result.createMany.mock.calls[0][0].data;
-      const domainResult = resultData.find((r: any) => r.domainId === 'dom1');
+      const resultData = getCreateManyData<ResultData>(
+        mockPrisma.result.createMany,
+      );
+      const domainResult = resultData.find((r) => r.domainId === 'dom1')!;
       expect(domainResult.compatibility).toBe(100);
     });
 
@@ -298,8 +321,10 @@ describe('MatchingService', () => {
       });
 
       // dotProduct = 1.0 * 2.0 = 2.0, weightSum = 2.0 → 2.0/2.0 = 1.0 → 100%
-      const resultData = mockPrisma.result.createMany.mock.calls[0][0].data;
-      const domResult = resultData.find((r: any) => r.domainId === 'dom1');
+      const resultData = getCreateManyData<ResultData>(
+        mockPrisma.result.createMany,
+      );
+      const domResult = resultData.find((r) => r.domainId === 'dom1')!;
       expect(domResult.compatibility).toBe(100);
     });
 
@@ -331,11 +356,15 @@ describe('MatchingService', () => {
 
       await service.calculate({
         userId: 'u1',
-        answers: Array(5).fill({ questionId: 'q1', optionId: 'o1' }),
+        answers: Array.from<AnswerDto>({ length: 5 }, () => ({
+          questionId: 'q1',
+          optionId: 'o1',
+        })),
       });
 
-      const dimData =
-        mockPrisma.studentDimension.createMany.mock.calls[0][0].data;
+      const dimData = getCreateManyData<StudentDimData>(
+        mockPrisma.studentDimension.createMany,
+      );
       expect(dimData[0].normalizedScore).toBe(1);
     });
 
@@ -378,9 +407,11 @@ describe('MatchingService', () => {
         answers: [{ questionId: 'q1', optionId: 'o1' }],
       });
 
-      const resultData = mockPrisma.result.createMany.mock.calls[0][0].data;
-      const domainResults = resultData.filter((r: any) => r.domainId);
-      const metierResults = resultData.filter((r: any) => r.metierId);
+      const resultData = getCreateManyData<ResultData>(
+        mockPrisma.result.createMany,
+      );
+      const domainResults = resultData.filter((r) => r.domainId);
+      const metierResults = resultData.filter((r) => r.metierId);
 
       expect(domainResults).toHaveLength(5);
       expect(metierResults).toHaveLength(10);
@@ -661,8 +692,10 @@ describe('MatchingService', () => {
       });
 
       // adjustedScore = 0.65 → domain compatibility 65%
-      const resultData = mockPrisma.result.createMany.mock.calls[0][0].data;
-      const domResult = resultData.find((r: any) => r.domainId === 'dom1');
+      const resultData = getCreateManyData<ResultData>(
+        mockPrisma.result.createMany,
+      );
+      const domResult = resultData.find((r) => r.domainId === 'dom1')!;
       expect(domResult.compatibility).toBe(65);
     });
 
@@ -704,8 +737,10 @@ describe('MatchingService', () => {
       });
 
       // clamped to 1.0 → 100%
-      const resultData = mockPrisma.result.createMany.mock.calls[0][0].data;
-      const domResult = resultData.find((r: any) => r.domainId === 'dom1');
+      const resultData = getCreateManyData<ResultData>(
+        mockPrisma.result.createMany,
+      );
+      const domResult = resultData.find((r) => r.domainId === 'dom1')!;
       expect(domResult.compatibility).toBe(100);
     });
   });
