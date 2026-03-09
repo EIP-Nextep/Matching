@@ -7,18 +7,22 @@ datasource db {
 }
 
 model StudentProfile {
-  id          String       @id @default(uuid())
-  userId      String       @unique
-  quizAnswers QuizAnswer[]
-  results     Result[]
+  id           String              @id @default(uuid())
+  userId       String              @unique
+  quizAnswers  QuizAnswer[]
+  dimensions   StudentDimension[]
+  results      Result[]
+  interactions MetierInteraction[]
 }
 
 model Dimension {
-  id              String            @id @default(uuid())
-  name            String            @unique
-  questions       Question[]
-  options         Option[]
-  metierRelations MetierDimension[]
+  id               String             @id @default(uuid())
+  name             String             @unique
+  questions        Question[]
+  options          Option[]
+  metierRelations  MetierDimension[]
+  domainRelations  DomainDimension[]
+  studentRelations StudentDimension[]
 }
 
 model Question {
@@ -37,40 +41,66 @@ model Question {
 }
 
 model Option {
-  id            String    @id @default(uuid())
-  letter        String    // "A", "B", "C", "D"
-  title         String    // "Le leader organisé"
-  description   String?   // "Je planifie, distribue les tâches..."
+  id            String       @id @default(uuid())
+  letter        String       // "A", "B", "C", "D"
+  title         String       // "Le leader organisé"
+  description   String?      // "Je planifie, distribue les tâches..."
   
   questionId    String
-  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question      Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
   
   dimensionName String
-  dimension     Dimension @relation(fields: [dimensionName], references: [name])
+  dimension     Dimension    @relation(fields: [dimensionName], references: [name])
+  
+  quizAnswers   QuizAnswer[]
 }
 
 model Metier {
-  id         String            @id @default(uuid())
-  name       String
-  domainId   String
-  domain     Domain            @relation(fields: [domainId], references: [id])
-  dimensions MetierDimension[]
-  results    Result[]
+  id           String              @id @default(uuid())
+  name         String
+  description  String?
+  onetCode     String?             @unique
+  domainId     String
+  domain       Domain              @relation(fields: [domainId], references: [id])
+  dimensions   MetierDimension[]
+  results      Result[]
+  interactions MetierInteraction[]
 }
 
 model MetierDimension {
   id          String    @id @default(uuid())
   metierId    String
-  metier      Metier    @relation(fields: [metierId], references: [id])
+  metier      Metier    @relation(fields: [metierId], references: [id], onDelete: Cascade)
   dimensionId String
-  dimension   Dimension @relation(fields: [dimensionId], references: [id])
-  score       Int
+  dimension   Dimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  weight      Float
 }
 
 model Domain {
-  id      String   @id @default(uuid())
-  name    String   @unique
-  metiers Metier[]
+  id         String            @id @default(uuid())
+  name       String            @unique
+  metiers    Metier[]
+  dimensions DomainDimension[]
+  results    Result[]
+  schools    SchoolDomain[]
+}
+
+model DomainDimension {
+  id          String    @id @default(uuid())
+  domainId    String
+  domain      Domain    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  dimensionId String
+  dimension   Dimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  weight      Float
+}
+
+model StudentDimension {
+  id             String         @id @default(uuid())
+  studentId      String
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  dimensionId    String
+  dimension      Dimension      @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  normalizedScore Float
 }
 
 model QuizAnswer {
@@ -79,14 +109,46 @@ model QuizAnswer {
   student    StudentProfile @relation(fields: [studentId], references: [id])
   questionId String
   question   Question       @relation(fields: [questionId], references: [id])
-  value      Int
+  optionId   String
+  option     Option         @relation(fields: [optionId], references: [id])
+  value      Int            @default(1)
 }
 
 model Result {
+  id            String         @id @default(uuid())
+  studentId     String
+  student       StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  domainId      String?
+  domain        Domain?        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  metierId      String?
+  metier        Metier?        @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  compatibility Float
+}
+
+model School {
+  id       String         @id @default(uuid())
+  name     String
+  location String?
+  url      String?
+  domains  SchoolDomain[]
+}
+
+model SchoolDomain {
+  id       String @id @default(uuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  domainId String
+  domain   Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+}
+
+model MetierInteraction {
   id        String         @id @default(uuid())
   studentId String
-  student   StudentProfile @relation(fields: [studentId], references: [id])
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   metierId  String
-  metier    Metier         @relation(fields: [metierId], references: [id])
-  score     Int
+  metier    Metier         @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  liked     Boolean        // true = like, false = dislike
+  createdAt DateTime       @default(now())
+
+  @@unique([studentId, metierId]) // Un seul avis par métier par étudiant
 }

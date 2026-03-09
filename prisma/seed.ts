@@ -2,6 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { config } from 'dotenv';
+import * as xlsx from 'xlsx';
+import * as fs from 'fs';
 
 config();
 
@@ -10,32 +12,210 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+const dimensionMapping: Record<string, string> = {
+  "realiste": "Realistic",
+  "investigateur": "Investigative",
+  "artistique": "Artistic",
+  "social": "Social",
+  "entreprenant": "Enterprising",
+  "conventionnel": "Conventional",
+  "ouverture": "Innovation",
+  "conscienciosite": "Dependability",
+  "extraversion": "Social Orientation",
+  "agreabilite": "Cooperation",
+  "stabilite_emotionnelle": "Stress Tolerance",
+  "motivation": "Achievement Orientation",
+  "patience": "Self-Control",
+  "logique": "Intellectual Curiosity"
+};
+
+interface MetierJson {
+  onetCode: string;
+  name: string;
+  description: string;
+  domain: string;
+}
+
+interface MetiersFile {
+  domains: string[];
+  metiers: MetierJson[];
+}
+
 async function main() {
   console.log('--- Début du Seed ---');
 
-  // 1. Nettoyage (Ordre crucial pour respecter les clés étrangères)
+  await prisma.result.deleteMany({});
+  await prisma.metierInteraction.deleteMany({});
+  await prisma.studentDimension.deleteMany({});
+  await prisma.quizAnswer.deleteMany({});
   await prisma.metierDimension.deleteMany({});
   await prisma.metier.deleteMany({});
+  await prisma.domainDimension.deleteMany({});
+  await prisma.schoolDomain.deleteMany({});
   await prisma.domain.deleteMany({});
   await prisma.option.deleteMany({});
   await prisma.question.deleteMany({});
   await prisma.dimension.deleteMany({});
+  await prisma.studentProfile.deleteMany({});
+  await prisma.school.deleteMany({});
 
-  const dimensionNames = [
+  console.log('--- Chargement de metiers.json ---');
+  const metiersFile: MetiersFile = JSON.parse(
+    fs.readFileSync('prisma/raw_data/metiers.json', 'utf-8')
+  );
+
+  const selectedCodes = new Set(metiersFile.metiers.map(m => m.onetCode));
+
+  console.log('--- Parsage des fichiers Excel ---');
+  const interests = xlsx.utils.sheet_to_json<any>(
+    xlsx.readFile('prisma/raw_data/Interests.xlsx').Sheets['Interests']
+  );
+  const workStyles = xlsx.utils.sheet_to_json<any>(
+    xlsx.readFile('prisma/raw_data/Work_Styles.xlsx').Sheets['Work Styles']
+  );
+
+  const ignoredElements = [
+    'First Interest High-Point',
+    'Second Interest High-Point',
+    'Third Interest High-Point',
+  ];
+
+  const jobs = new Map<string, { dims: Record<string, number> }>();
+
+  function processRow(row: any) {
+    if (ignoredElements.includes(row['Element Name'])) return;
+    const code = row['O*NET-SOC Code'];
+    if (!code || !selectedCodes.has(code)) return;
+
+    if (!jobs.has(code)) {
+      jobs.set(code, { dims: {} });
+    }
+    const elem = row['Element Name'];
+    const val = Number(row['Data Value']) || 0;
+    jobs.get(code)!.dims[elem] = val;
+  }
+
+  interests.forEach(processRow);
+  workStyles.forEach(processRow);
+
+  console.log('--- Insertion des dimensions ---');
+  const allDimensionNames = new Set<string>();
+
+  const quizDimensionKeys = [
     "ouverture", "conscienciosite", "extraversion", "agreabilite",
     "stabilite_emotionnelle", "realiste", "investigateur",
     "artistique", "social", "entreprenant", "conventionnel", "motivation",
     "patience", "logique"
   ];
+  for (const key of quizDimensionKeys) {
+    allDimensionNames.add(dimensionMapping[key] || key);
+  }
+
+  for (const job of jobs.values()) {
+    for (const elem of Object.keys(job.dims)) {
+      allDimensionNames.add(elem);
+    }
+  }
 
   const createdDimensions: Record<string, any> = {};
-  for (const name of dimensionNames) {
+  for (const name of allDimensionNames) {
     const dim = await prisma.dimension.create({ data: { name } });
     createdDimensions[name] = dim;
   }
+  const dimMap = new Map(
+    Object.entries(createdDimensions).map(([key, val]) => [key, val.id])
+  );
 
-  const dimMap = new Map(Object.entries(createdDimensions).map(([key, val]) => [key, val.id]));
+  console.log('--- Insertion des domaines ---');
+  const dMap = new Map<string, string>(); // domainName → domainId
+  for (const domainName of metiersFile.domains) {
+    const domain = await prisma.domain.create({ data: { name: domainName } });
+    dMap.set(domainName, domain.id);
+  }
 
+  console.log('--- Insertion des métiers et poids ---');
+
+  // On collecte les poids normalisés par domaine pour calculer les DomainDimensions après
+  const domainDimAccum = new Map<string, Record<string, { total: number; count: number }>>();
+
+  for (const metierJson of metiersFile.metiers) {
+    const jobData = jobs.get(metierJson.onetCode);
+    if (!jobData) {
+      console.warn(`⚠️  O*NET code ${metierJson.onetCode} (${metierJson.name}) non trouvé dans l'Excel, ignoré.`);
+      continue;
+    }
+
+    const domainId = dMap.get(metierJson.domain);
+    if (!domainId) {
+      console.warn(`⚠️  Domaine "${metierJson.domain}" non trouvé pour ${metierJson.name}, ignoré.`);
+      continue;
+    }
+
+    // Normaliser les poids du métier : somme = 1
+    const totalScore = Object.values(jobData.dims).reduce((sum, v) => sum + v, 0);
+    if (totalScore === 0) {
+      console.warn(`⚠️  Score total = 0 pour ${metierJson.name}, ignoré.`);
+      continue;
+    }
+
+    const normalizedDims: Record<string, number> = {};
+    for (const [elem, score] of Object.entries(jobData.dims)) {
+      normalizedDims[elem] = score / totalScore;
+    }
+
+    const metierDimsCreate = Object.entries(normalizedDims)
+      .filter(([elem]) => dimMap.has(elem))
+      .map(([elem, weight]) => ({
+        dimensionId: dimMap.get(elem)!,
+        weight,
+      }));
+
+    await prisma.metier.create({
+      data: {
+        name: metierJson.name,
+        description: metierJson.description,
+        onetCode: metierJson.onetCode,
+        domainId,
+        dimensions: { create: metierDimsCreate },
+      },
+    });
+
+    // Accumuler pour les poids du domaine
+    if (!domainDimAccum.has(metierJson.domain)) {
+      domainDimAccum.set(metierJson.domain, {});
+    }
+    const domAccum = domainDimAccum.get(metierJson.domain)!;
+    for (const [elem, weight] of Object.entries(normalizedDims)) {
+      if (!domAccum[elem]) domAccum[elem] = { total: 0, count: 0 };
+      domAccum[elem].total += weight;
+      domAccum[elem].count += 1;
+    }
+  }
+
+  console.log('--- Insertion des poids des domaines ---');
+  for (const [domainName, dimAccum] of domainDimAccum.entries()) {
+    const domainId = dMap.get(domainName)!;
+
+    const avgDims: Record<string, number> = {};
+    for (const [elem, { total, count }] of Object.entries(dimAccum)) {
+      avgDims[elem] = total / count;
+    }
+
+    const totalWeight = Object.values(avgDims).reduce((sum, v) => sum + v, 0);
+    const domDimsData = Object.entries(avgDims)
+      .filter(([elem]) => dimMap.has(elem))
+      .map(([elem, avg]) => ({
+        domainId,
+        dimensionId: dimMap.get(elem)!,
+        weight: totalWeight > 0 ? avg / totalWeight : 0,
+      }));
+
+    for (const d of domDimsData) {
+      await prisma.domainDimension.create({ data: d });
+    }
+  }
+
+  console.log('--- Insertion des questions ---');
   const fullQuestions = [
     {
       order: 1, category: "Aspirations",
@@ -183,7 +363,7 @@ async function main() {
       text: "Tu serais prêt à étudier pendant :",
       dimensionName: "conscienciosite",
       options: [
-        { letter: 'A', title: '2–3 ans maximum', dimension: 'realiste' },
+        { letter: 'A', title: '2-3 ans maximum', dimension: 'realiste' },
         { letter: 'B', title: '5 ans', dimension: 'conscienciosite' },
         { letter: 'C', title: '5 ans +', dimension: 'investigateur' },
         { letter: 'D', title: 'Peu importe si c\'est une passion', dimension: 'motivation' },
@@ -194,7 +374,7 @@ async function main() {
       text: "Le coût des études est-il un critère déterminant ?",
       dimensionName: "conventionnel",
       options: [
-        { letter: 'A', title: 'Oui, priorité au public/aides', dimension: 'conventionnel' },
+        { letter: 'A', title: 'Oui, priority au public/aides', dimension: 'conventionnel' },
         { letter: 'B', title: 'Important mais ouvert au privé', dimension: 'motivation' },
         { letter: 'C', title: 'Pas prioritaire si ça me correspond', dimension: 'ouverture' },
         { letter: 'D', title: 'Le budget n\'est pas une contrainte', dimension: 'extraversion' },
@@ -203,54 +383,28 @@ async function main() {
   ];
 
   for (const qData of fullQuestions) {
+    const parentDimName = dimensionMapping[qData.dimensionName] || qData.dimensionName;
     await prisma.question.create({
       data: {
         text: qData.text,
         category: qData.category,
         order: qData.order,
         imageUrl: "/Quiz.png",
-        dimensionId: dimMap.get(qData.dimensionName)!,
+        dimensionId: dimMap.get(parentDimName)!,
         options: {
-          create: qData.options.map(o => ({
-            letter: o.letter,
-            title: o.title,
-            dimensionName: o.dimension
-          }))
+          create: qData.options.map(o => {
+            const mappedName = dimensionMapping[o.dimension] || o.dimension;
+            return {
+              letter: o.letter,
+              title: o.title,
+              dimensionName: mappedName
+            };
+          })
         }
       }
     });
   }
 
-  const domain = await prisma.domain.create({ data: { name: "Général" } });
-
-  const jobs = [
-    { name: "Médecin", dims: { "social": 10, "investigateur": 8 } },
-    { name: "Entrepreneur", dims: { "entreprenant": 10, "extraversion": 7 } },
-    { name: "Psychologue", dims: { "social": 10, "stabilite_emotionnelle": 9 } },
-    { name: "Manager", dims: { "entreprenant": 10, "extraversion": 6 } },
-    { name: "Designer", dims: { "artistique": 10, "ouverture": 8 } },
-    { name: "Ingénieur", dims: { "investigateur": 10, "logique": 9 } },
-    { name: "Kinésithérapeute", dims: { "social": 9, "realiste": 7 } },
-    { name: "Préparateur physique", dims: { "realiste": 10, "social": 6 } },
-    { name: "Ape (Éducateur)", dims: { "social": 10, "patience": 8 } },
-    { name: "Financier", dims: { "conventionnel": 10, "logique": 8 } },
-  ];
-
-  console.log('--- Insertion des métiers ---');
-  for (const job of jobs) {
-    await prisma.metier.create({
-      data: {
-        name: job.name,
-        domainId: domain.id,
-        dimensions: {
-          create: Object.entries(job.dims).map(([dName, dScore]) => ({
-            dimensionId: dimMap.get(dName)!,
-            score: Number(dScore)
-          }))
-        }
-      }
-    });
-  }
 
   console.log('--- Seed terminé avec succès ! ---');
 }

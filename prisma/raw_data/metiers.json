@@ -1,0 +1,136 @@
+{
+  "domains": [
+    "Informatique & Numérique",
+    "Santé & Médecine",
+    "Ingénierie & Architecture",
+    "Droit & Justice",
+    "Arts & Design",
+    "Éducation & Formation",
+    "Commerce & Marketing",
+    "Finance & Gestion",
+    "Sciences & Recherche",
+    "Social & Accompagnement"
+  ],
+  "metiers": [
+    {
+      "onetCode": "15-1252.00",
+      "name": "Développeur logiciel",
+      "description": "Conçoit, développe et maintient des applications et systèmes informatiques. Travaille en équipe sur des projets variés allant du web au mobile, en passant par le cloud et l'intelligence artificielle.",
+      "domain": "Informatique & Numérique"
+    },
+    {
+      "onetCode": "15-2051.00",
+      "name": "Data Scientist",
+      "description": "Analyse de grandes quantités de données pour en extraire des tendances et des insights. Utilise les statistiques, le machine learning et la programmation pour aider les entreprises à prendre de meilleures décisions.",
+      "domain": "Informatique & Numérique"
+    },
+    {
+      "onetCode": "15-1212.00",
+      "name": "Analyste en cybersécurité",
+      "description": "Protège les systèmes informatiques et les données contre les cyberattaques. Surveille les réseaux, identifie les vulnérabilités et met en place des mesures de sécurité pour les organisations.",
+      "domain": "Informatique & Numérique"
+    },
+    {
+      "onetCode": "29-1215.00",
+      "name": "Médecin généraliste",
+      "description": "Diagnostique et traite les maladies courantes, assure le suivi médical des patients et les oriente vers des spécialistes si nécessaire. Premier interlocuteur de santé pour les familles.",
+      "domain": "Santé & Médecine"
+    },
+    {
+      "onetCode": "29-1141.00",
+      "name": "Infirmier(ère)",
+      "description": "Prodigue des soins aux patients, surveille leur état de santé et collabore avec l'équipe médicale. Un métier humain au contact direct des personnes, en hôpital ou en libéral.",
+      "domain": "Santé & Médecine"
+    },
+    {
+      "onetCode": "29-1031.00",
+      "name": "Diététicien(ne) / Nutritionniste",
+      "description": "Accompagne les patients dans leur alimentation pour prévenir ou traiter des pathologies. Élabore des plans nutritionnels personnalisés et sensibilise à l'équilibre alimentaire.",
+      "domain": "Santé & Médecine"
+    },
+    {
+      "onetCode": "17-2051.00",
+      "name": "Ingénieur civil",
+      "description": "Conçoit et supervise la construction d'infrastructures : ponts, routes, bâtiments, réseaux d'eau. Allie calculs techniques et gestion de projet pour façonner l'environnement urbain.",
+      "domain": "Ingénierie & Architecture"
+    },
+    {
+      "onetCode": "17-1011.00",
+      "name": "Architecte",
+      "description": "Imagine et dessine des bâtiments en alliant esthétique, fonctionnalité et normes techniques. Accompagne les projets de la conception à la livraison, au croisement de l'art et de l'ingénierie.",
+      "domain": "Ingénierie & Architecture"
+    },
+    {
+      "onetCode": "23-1011.00",
+      "name": "Avocat(e)",
+      "description": "Défend et conseille ses clients dans des affaires juridiques : droit des affaires, pénal, famille, travail. Analyse les textes de loi, plaide devant les tribunaux et négocie des accords.",
+      "domain": "Droit & Justice"
+    },
+    {
+      "onetCode": "27-1024.00",
+      "name": "Designer graphique",
+      "description": "Crée des visuels pour communiquer des messages : logos, affiches, interfaces web, packaging. Maîtrise les outils de création numérique et possède un fort sens esthétique.",
+      "domain": "Arts & Design"
+    },
+    {
+      "onetCode": "27-2012.00",
+      "name": "Producteur / Réalisateur",
+      "description": "Dirige la création de contenus audiovisuels : films, séries, publicités, vidéos. Coordonne les équipes techniques et artistiques pour donner vie à une vision créative.",
+      "domain": "Arts & Design"
+    },
+    {
+      "onetCode": "25-2021.00",
+      "name": "Professeur des écoles",
+      "description": "Enseigne les fondamentaux aux enfants du primaire : lecture, écriture, mathématiques, sciences. Accompagne leur développement intellectuel et social au quotidien.",
+      "domain": "Éducation & Formation"
+    },
+    {
+      "onetCode": "25-1011.00",
+      "name": "Enseignant(e) en études supérieures",
+      "description": "Enseigne sa discipline à l'université ou en école supérieure, mène des recherches dans son domaine et encadre les étudiants dans leurs travaux académiques.",
+      "domain": "Éducation & Formation"
+    },
+    {
+      "onetCode": "11-2021.00",
+      "name": "Responsable marketing",
+      "description": "Définit la stratégie marketing d'une entreprise ou d'un produit. Analyse le marché, pilote les campagnes publicitaires et coordonne les équipes pour développer la notoriété et les ventes.",
+      "domain": "Commerce & Marketing"
+    },
+    {
+      "onetCode": "13-1161.00",
+      "name": "Analyste de marché",
+      "description": "Étudie les tendances du marché, le comportement des consommateurs et la concurrence. Fournit des analyses et recommandations stratégiques pour guider les décisions commerciales.",
+      "domain": "Commerce & Marketing"
+    },
+    {
+      "onetCode": "13-2011.00",
+      "name": "Comptable / Auditeur",
+      "description": "Gère la comptabilité d'une entreprise, prépare les bilans financiers et veille au respect des normes fiscales. Peut aussi auditer les comptes pour vérifier leur fiabilité.",
+      "domain": "Finance & Gestion"
+    },
+    {
+      "onetCode": "19-1042.00",
+      "name": "Chercheur en sciences médicales",
+      "description": "Mène des recherches pour comprendre les maladies et développer de nouveaux traitements. Travaille en laboratoire, analyse des données expérimentales et publie ses découvertes.",
+      "domain": "Sciences & Recherche"
+    },
+    {
+      "onetCode": "15-1211.00",
+      "name": "Analyste systèmes informatiques",
+      "description": "Analyse les besoins informatiques d'une organisation et conçoit des solutions techniques adaptées. Fait le pont entre les équipes métier et les développeurs.",
+      "domain": "Informatique & Numérique"
+    },
+    {
+      "onetCode": "21-1014.00",
+      "name": "Conseiller en santé mentale",
+      "description": "Accompagne les personnes en souffrance psychologique à travers des entretiens thérapeutiques. Aide à surmonter l'anxiété, la dépression, les traumatismes et les difficultés relationnelles.",
+      "domain": "Social & Accompagnement"
+    },
+    {
+      "onetCode": "11-3021.00",
+      "name": "Directeur des systèmes d'information",
+      "description": "Pilote la stratégie informatique d'une organisation. Supervise les équipes IT, gère les budgets technologiques et s'assure que les systèmes soutiennent les objectifs de l'entreprise.",
+      "domain": "Informatique & Numérique"
+    }
+  ]
+}
