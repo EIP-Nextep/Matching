@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   HttpCode,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { MatchingService } from './matching.service';
@@ -14,11 +15,13 @@ import {
   MetierInteractionDto,
   RemoveInteractionDto,
 } from './dto/matching.dto';
+import { AuthGuard } from '../app.guard';
 
 @ApiTags('matching')
+@UseGuards(AuthGuard)
 @Controller('matching')
 export class MatchingController {
-  constructor(private readonly matchingService: MatchingService) {}
+  constructor(private readonly matchingService: MatchingService) { }
 
   @Get('questions')
   @ApiOperation({
