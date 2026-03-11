@@ -2,10 +2,11 @@ name: Push to School Sub-folder
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "dev"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "dev"]
     types: ["closed"]
+
 
 jobs:
   push-to-folder:
