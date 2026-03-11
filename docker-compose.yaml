@@ -1,0 +1,16 @@
+services:
+  db-matching:
+    image: postgres:15
+    container_name: nextep-matching-db
+    restart: always
+    environment:
+      POSTGRES_USER: matching_admin
+      POSTGRES_PASSWORD: matching_123
+      POSTGRES_DB: nextep_matching_db
+    ports:
+      - "5445:5432" # Le port 5445 sur le PC pointe vers le 5432 du conteneur
+    volumes:
+      - matching_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  matching_postgres_data:

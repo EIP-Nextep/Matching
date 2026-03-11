@@ -21,6 +21,9 @@ jobs:
 
       - name: Installation des dépendances
         run: npm ci 
+      
+      - name: Generate Prisma Client
+        run: npx prisma generate
 
       - name: Lancement des tests
         run: npm run test
