@@ -18,13 +18,15 @@ import {
   CreateCourseDto,
 } from './dto/matching.dto';
 import { AuthGuard } from '../app.guard';
+import { Public } from '../public.decorator';
 
 @ApiTags('matching')
 @UseGuards(AuthGuard)
 @Controller('matching')
 export class MatchingController {
-  constructor(private readonly matchingService: MatchingService) {}
+  constructor(private readonly matchingService: MatchingService) { }
 
+  @Public()
   @Post('user')
   @HttpCode(201)
   @ApiOperation({
@@ -147,6 +149,7 @@ export class MatchingController {
     return this.matchingService.getMetierInteractions(userId);
   }
 
+  @Public()
   @Post('courses')
   @HttpCode(201)
   @ApiOperation({ summary: 'Ajouter un parcours dans la base de données' })
