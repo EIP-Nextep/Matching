@@ -9,7 +9,7 @@ const mockService = {
   calculate: jest.fn(),
   getRecommendedDomains: jest.fn(),
   getRecommendedMetiers: jest.fn(),
-  getRecommendedSchools: jest.fn(),
+  getRecommendedCourses: jest.fn(),
   interactMetier: jest.fn(),
   removeMetierInteraction: jest.fn(),
   getMetierInteractions: jest.fn(),
@@ -102,15 +102,17 @@ describe('MatchingController', () => {
     });
   });
 
-  describe('getRecommendedSchools', () => {
+  describe('getRecommendedCourses', () => {
     it('should delegate with userId param', async () => {
-      const expected = [{ id: 'sch1', name: 'Epitech', matchPercentage: 90 }];
-      mockService.getRecommendedSchools.mockResolvedValue(expected);
+      const expected = [
+        { id: 'crs1', matchPercentage: 90, domains: ['Informatique'] },
+      ];
+      mockService.getRecommendedCourses.mockResolvedValue(expected);
 
-      const result = await controller.getRecommendedSchools('u1');
+      const result = await controller.getRecommendedCourses('u1');
 
       expect(result).toEqual(expected);
-      expect(mockService.getRecommendedSchools).toHaveBeenCalledWith('u1');
+      expect(mockService.getRecommendedCourses).toHaveBeenCalledWith('u1');
     });
   });
 

@@ -48,3 +48,18 @@ export class CreateUserDto {
   })
   userId!: string;
 }
+
+export class CreateCourseDto {
+  @ApiProperty({
+    description: "ID du parcours scolaire (venant de l'autre microservice)",
+    example: 'course-uuid-1234',
+  })
+  id!: string;
+
+  @ApiProperty({
+    description: 'Liste des IDs de domaines associés au parcours',
+    type: [String],
+    example: ['domain-id-1', 'domain-id-2'],
+  })
+  domainIds!: string[];
+}

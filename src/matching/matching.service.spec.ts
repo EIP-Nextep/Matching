@@ -50,7 +50,7 @@ const mockPrisma = {
     deleteMany: jest.fn(),
     findMany: jest.fn(),
   },
-  schoolDomain: { findMany: jest.fn() },
+  courseDomain: { findMany: jest.fn() },
 };
 
 describe('MatchingService', () => {
@@ -356,10 +356,13 @@ describe('MatchingService', () => {
 
       await service.calculate({
         userId: 'u1',
-        answers: Array.from<AnswerDto>({ length: 5 }, () => ({
-          questionId: 'q1',
-          optionId: 'o1',
-        })),
+        answers: Array.from(
+          { length: 5 },
+          (): AnswerDto => ({
+            questionId: 'q1',
+            optionId: 'o1',
+          }),
+        ),
       });
 
       const dimData = getCreateManyData<StudentDimData>(
@@ -500,10 +503,10 @@ describe('MatchingService', () => {
     });
   });
 
-  describe('getRecommendedSchools', () => {
+  describe('getRecommendedCourses', () => {
     it('should return empty array if student not found', async () => {
       mockPrisma.studentProfile.findUnique.mockResolvedValue(null);
-      const result = await service.getRecommendedSchools('unknown');
+      const result = await service.getRecommendedCourses('unknown');
       expect(result).toEqual([]);
     });
 
@@ -513,11 +516,11 @@ describe('MatchingService', () => {
         userId: 'u1',
       });
       mockPrisma.result.findMany.mockResolvedValue([]);
-      const result = await service.getRecommendedSchools('u1');
+      const result = await service.getRecommendedCourses('u1');
       expect(result).toEqual([]);
     });
 
-    it('should group schools by id and sort by best domain match', async () => {
+    it('should group courses by id and sort by best domain match', async () => {
       mockPrisma.studentProfile.findUnique.mockResolvedValue({
         id: 's1',
         userId: 'u1',
@@ -526,52 +529,43 @@ describe('MatchingService', () => {
         { domainId: 'dom1', compatibility: 90 },
         { domainId: 'dom2', compatibility: 60 },
       ]);
-      mockPrisma.schoolDomain.findMany.mockResolvedValue([
+      mockPrisma.courseDomain.findMany.mockResolvedValue([
         {
-          schoolId: 'sch1',
+          courseId: 'crs1',
           domainId: 'dom1',
-          school: {
-            id: 'sch1',
-            name: 'Epitech',
-            location: 'Paris',
-            url: null,
+          course: {
+            id: 'crs1',
           },
           domain: { name: 'Informatique' },
         },
         {
-          schoolId: 'sch2',
+          courseId: 'crs2',
           domainId: 'dom2',
-          school: {
-            id: 'sch2',
-            name: 'Beaux-Arts',
-            location: 'Lyon',
-            url: null,
+          course: {
+            id: 'crs2',
           },
           domain: { name: 'Arts' },
         },
         {
-          schoolId: 'sch1',
+          courseId: 'crs1',
           domainId: 'dom2',
-          school: {
-            id: 'sch1',
-            name: 'Epitech',
-            location: 'Paris',
-            url: null,
+          course: {
+            id: 'crs1',
           },
           domain: { name: 'Arts' },
         },
       ]);
 
-      const result = await service.getRecommendedSchools('u1');
+      const result = await service.getRecommendedCourses('u1');
 
       expect(result).toHaveLength(2);
-      // Epitech first (bestMatch = 90)
-      expect(result[0].name).toBe('Epitech');
+      // crs1 first (bestMatch = 90)
+      expect(result[0].id).toBe('crs1');
       expect(result[0].matchPercentage).toBe(90);
       expect(result[0].domains).toContain('Informatique');
       expect(result[0].domains).toContain('Arts');
-      // Beaux-Arts second
-      expect(result[1].name).toBe('Beaux-Arts');
+      // crs2 second
+      expect(result[1].id).toBe('crs2');
       expect(result[1].matchPercentage).toBe(60);
     });
   });

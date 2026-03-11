@@ -3,7 +3,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { CalculateDto, MetierInteractionDto } from './dto/matching.dto';
+import {
+  CalculateDto,
+  MetierInteractionDto,
+  CreateCourseDto,
+} from './dto/matching.dto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -262,7 +266,7 @@ export class MatchingService {
     }));
   }
 
-  async getRecommendedSchools(userId: string) {
+  async getRecommendedCourses(userId: string) {
     const student = await this.prisma.studentProfile.findUnique({
       where: { userId },
     });
@@ -281,56 +285,50 @@ export class MatchingService {
 
     if (domainIds.length === 0) return [];
 
-    // Trouver les écoles liées à ces domaines
-    const schoolDomains = await this.prisma.schoolDomain.findMany({
+    // Trouver les parcours liés à ces domaines
+    const courseDomains = await this.prisma.courseDomain.findMany({
       where: { domainId: { in: domainIds } },
       include: {
-        school: true,
+        course: true,
         domain: true,
       },
     });
 
-    // Regrouper par école et calculer le meilleur match
-    const schoolMap = new Map<
+    // Regrouper par parcours et calculer le meilleur match
+    const courseMap = new Map<
       string,
       {
-        school: {
+        course: {
           id: string;
-          name: string;
-          location: string | null;
-          url: string | null;
         };
         domains: string[];
         bestMatch: number;
       }
     >();
 
-    for (const sd of schoolDomains) {
+    for (const cd of courseDomains) {
       const domainResult = domainResults.find(
-        (r) => r.domainId === sd.domainId,
+        (r) => r.domainId === cd.domainId,
       );
       const match = domainResult?.compatibility || 0;
 
-      if (!schoolMap.has(sd.schoolId)) {
-        schoolMap.set(sd.schoolId, {
-          school: sd.school,
+      if (!courseMap.has(cd.courseId)) {
+        courseMap.set(cd.courseId, {
+          course: cd.course,
           domains: [],
           bestMatch: 0,
         });
       }
 
-      const entry = schoolMap.get(sd.schoolId)!;
-      entry.domains.push(sd.domain.name);
+      const entry = courseMap.get(cd.courseId)!;
+      entry.domains.push(cd.domain.name);
       entry.bestMatch = Math.max(entry.bestMatch, match);
     }
 
-    return Array.from(schoolMap.values())
+    return Array.from(courseMap.values())
       .sort((a, b) => b.bestMatch - a.bestMatch)
       .map((entry) => ({
-        id: entry.school.id,
-        name: entry.school.name,
-        location: entry.school.location,
-        url: entry.school.url,
+        id: entry.course.id,
         matchPercentage: entry.bestMatch,
         domains: entry.domains,
       }));
@@ -505,5 +503,38 @@ export class MatchingService {
     ];
 
     await this.prisma.result.createMany({ data: resultData });
+  }
+
+  async createCourse(dto: CreateCourseDto) {
+    const { id, domainIds } = dto;
+
+    const course = await this.prisma.course.create({
+      data: {
+        id,
+        ...(domainIds &&
+          domainIds.length > 0 && {
+            domains: {
+              create: domainIds.map((domainId) => ({
+                domain: { connect: { id: domainId } },
+              })),
+            },
+          }),
+      },
+      include: {
+        domains: {
+          include: {
+            domain: true,
+          },
+        },
+      },
+    });
+
+    return {
+      message: 'Course created successfully',
+      course: {
+        id: course.id,
+        domains: course.domains.map((cd) => cd.domain.name),
+      },
+    };
   }
 }

@@ -82,7 +82,7 @@ model Domain {
   metiers    Metier[]
   dimensions DomainDimension[]
   results    Result[]
-  schools    SchoolDomain[]
+  courses    CourseDomain[]
 }
 
 model DomainDimension {
@@ -125,18 +125,15 @@ model Result {
   compatibility Float
 }
 
-model School {
-  id       String         @id @default(uuid())
-  name     String
-  location String?
-  url      String?
-  domains  SchoolDomain[]
+model Course {
+  id       String         @id // L'ID vient de l'autre microservice
+  domains  CourseDomain[]
 }
 
-model SchoolDomain {
+model CourseDomain {
   id       String @id @default(uuid())
-  schoolId String
-  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
   domainId String
   domain   Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
 }

@@ -51,13 +51,13 @@ async function main() {
   await prisma.metierDimension.deleteMany({});
   await prisma.metier.deleteMany({});
   await prisma.domainDimension.deleteMany({});
-  await prisma.schoolDomain.deleteMany({});
+  await prisma.courseDomain.deleteMany({});
   await prisma.domain.deleteMany({});
   await prisma.option.deleteMany({});
   await prisma.question.deleteMany({});
   await prisma.dimension.deleteMany({});
   await prisma.studentProfile.deleteMany({});
-  await prisma.school.deleteMany({});
+  await prisma.course.deleteMany({});
 
   console.log('--- Chargement de metiers.json ---');
   const metiersFile: MetiersFile = JSON.parse(

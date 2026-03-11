@@ -15,6 +15,7 @@ import {
   MetierInteractionDto,
   RemoveInteractionDto,
   CreateUserDto,
+  CreateCourseDto,
 } from './dto/matching.dto';
 import { AuthGuard } from '../app.guard';
 
@@ -87,18 +88,18 @@ export class MatchingController {
     return this.matchingService.getRecommendedMetiers(userId);
   }
 
-  @Get('recommendations/schools/:userId')
+  @Get('recommendations/courses/:userId')
   @ApiOperation({
-    summary: 'Obtenir les écoles recommandées triées par meilleur domaine',
+    summary: 'Obtenir les parcours recommandés triés par meilleur domaine',
   })
   @ApiParam({ name: 'userId', description: "ID de l'utilisateur" })
   @ApiResponse({
     status: 200,
     description:
-      'Liste des écoles avec pourcentage de match et domaines couverts',
+      'Liste des parcours avec pourcentage de match et domaines couverts',
   })
-  getRecommendedSchools(@Param('userId') userId: string) {
-    return this.matchingService.getRecommendedSchools(userId);
+  getRecommendedCourses(@Param('userId') userId: string) {
+    return this.matchingService.getRecommendedCourses(userId);
   }
 
   @Post('interactions/metier')
@@ -144,5 +145,16 @@ export class MatchingController {
   })
   getMetierInteractions(@Param('userId') userId: string) {
     return this.matchingService.getMetierInteractions(userId);
+  }
+
+  @Post('courses')
+  @HttpCode(201)
+  @ApiOperation({ summary: 'Ajouter un parcours dans la base de données' })
+  @ApiResponse({
+    status: 201,
+    description: 'Le parcours a été ajouté avec succès',
+  })
+  createCourse(@Body() dto: CreateCourseDto) {
+    return this.matchingService.createCourse(dto);
   }
 }
