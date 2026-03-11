@@ -21,7 +21,7 @@ import { AuthGuard } from '../app.guard';
 @UseGuards(AuthGuard)
 @Controller('matching')
 export class MatchingController {
-  constructor(private readonly matchingService: MatchingService) { }
+  constructor(private readonly matchingService: MatchingService) {}
 
   @Get('questions')
   @ApiOperation({

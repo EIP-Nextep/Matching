@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtModule } from '@nestjs/jwt';
 import { MatchingController } from './matching.controller';
 import { MatchingService } from './matching.service';
 
@@ -20,6 +21,7 @@ describe('MatchingController', () => {
     jest.clearAllMocks();
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [JwtModule.register({})],
       controllers: [MatchingController],
       providers: [{ provide: MatchingService, useValue: mockService }],
     }).compile();
