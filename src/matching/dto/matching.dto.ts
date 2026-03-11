@@ -40,3 +40,11 @@ export class RemoveInteractionDto {
   @ApiProperty({ description: 'ID du métier', example: 'uuid-metier' })
   metierId!: string;
 }
+
+export class CreateUserDto {
+  @ApiProperty({
+    description: 'ID utilisateur (venant du microservice Auth)',
+    example: 'auth-user-uuid',
+  })
+  userId!: string;
+}

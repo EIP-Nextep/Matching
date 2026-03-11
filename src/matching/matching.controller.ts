@@ -14,6 +14,7 @@ import {
   CalculateDto,
   MetierInteractionDto,
   RemoveInteractionDto,
+  CreateUserDto,
 } from './dto/matching.dto';
 import { AuthGuard } from '../app.guard';
 
@@ -22,6 +23,19 @@ import { AuthGuard } from '../app.guard';
 @Controller('matching')
 export class MatchingController {
   constructor(private readonly matchingService: MatchingService) {}
+
+  @Post('user')
+  @HttpCode(201)
+  @ApiOperation({
+    summary: 'Créer un profil étudiant vierge pour un nouvel utilisateur',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Utilisateur créé (ou déjà existant)',
+  })
+  createUser(@Body() dto: CreateUserDto) {
+    return this.matchingService.createUser(dto.userId);
+  }
 
   @Get('questions')
   @ApiOperation({

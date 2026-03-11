@@ -4,6 +4,7 @@ import { MatchingController } from './matching.controller';
 import { MatchingService } from './matching.service';
 
 const mockService = {
+  createUser: jest.fn(),
   getQuestions: jest.fn(),
   calculate: jest.fn(),
   getRecommendedDomains: jest.fn(),
@@ -31,6 +32,22 @@ describe('MatchingController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('createUser', () => {
+    it('should delegate to matchingService.createUser(userId)', async () => {
+      const dto = { userId: 'u1' };
+      const expected = {
+        message: 'User created in matching service',
+        user: { id: 'uuid', userId: 'u1' },
+      };
+      mockService.createUser.mockResolvedValue(expected);
+
+      const result = await controller.createUser(dto);
+
+      expect(result).toEqual(expected);
+      expect(mockService.createUser).toHaveBeenCalledWith('u1');
+    });
   });
 
   describe('getQuestions', () => {

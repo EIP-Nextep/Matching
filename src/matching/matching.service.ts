@@ -19,6 +19,25 @@ export class MatchingService {
     });
   }
 
+  async createUser(userId: string) {
+    const existing = await this.prisma.studentProfile.findUnique({
+      where: { userId },
+    });
+
+    if (existing) {
+      return {
+        message: 'User already exists in matching service',
+        user: existing,
+      };
+    }
+
+    const newUser = await this.prisma.studentProfile.create({
+      data: { userId },
+    });
+
+    return { message: 'User created in matching service', user: newUser };
+  }
+
   async calculate(calculateDto: CalculateDto) {
     const { userId, answers } = calculateDto;
 
