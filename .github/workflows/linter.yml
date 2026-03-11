@@ -22,5 +22,8 @@ jobs:
       - name: Installation des dépendances
         run: npm ci 
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
       - name: Lancement du Linter
         run: npm run lint

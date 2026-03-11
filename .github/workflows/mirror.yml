@@ -2,7 +2,7 @@ name: Push to School Sub-folder
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["main"]
   pull_request:
     branches: ["main"]
     types: ["closed"]
@@ -26,10 +26,10 @@ jobs:
           SSH_DEPLOY_KEY: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
         with:
           source-directory: '.' 
-          destination-github-username: 'EpitechPGE3-2025' 
-          destination-repository-name: 'G-EIP-600-PAR-6-1-eip-5' 
+          destination-github-username: 'EIP-Nextep' 
+          destination-repository-name: 'Nextep' 
           user-email: ${{ github.actor }}@users.noreply.github.com
           
           target-directory: 'Matching' 
           
-          target-branch: 'main'
+          target-branch: 'dev'

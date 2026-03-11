@@ -22,3 +22,10 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# vscode
+.vscode/
+
+# prisma
+.env
+generated/

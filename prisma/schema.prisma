@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model StudentProfile {
+  id           String              @id @default(uuid())
+  userId       String              @unique
+  quizAnswers  QuizAnswer[]
+  dimensions   StudentDimension[]
+  results      Result[]
+  interactions MetierInteraction[]
+}
+
+model Dimension {
+  id               String             @id @default(uuid())
+  name             String             @unique
+  questions        Question[]
+  options          Option[]
+  metierRelations  MetierDimension[]
+  domainRelations  DomainDimension[]
+  studentRelations StudentDimension[]
+}
+
+model Question {
+  id          String       @id @default(uuid())
+  text        String       // Le libellé de la question
+  category    String?      // "Aspirations", "Stress"
+  order       Int          @unique // Pour l'ordre d'affichage
+  imageUrl    String?      @default("/Quiz.png")
+  
+  options     Option[]     // Une question a plusieurs choix possibles
+  quizAnswers QuizAnswer[]
+
+  // Relation avec Dimension (si tu veux garder une dimension principale par question)
+  dimensionId String
+  dimension   Dimension    @relation(fields: [dimensionId], references: [id])
+}
+
+model Option {
+  id            String       @id @default(uuid())
+  letter        String       // "A", "B", "C", "D"
+  title         String       // "Le leader organisé"
+  description   String?      // "Je planifie, distribue les tâches..."
+  
+  questionId    String
+  question      Question     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  dimensionName String
+  dimension     Dimension    @relation(fields: [dimensionName], references: [name])
+  
+  quizAnswers   QuizAnswer[]
+}
+
+model Metier {
+  id           String              @id @default(uuid())
+  name         String
+  description  String?
+  onetCode     String?             @unique
+  domainId     String
+  domain       Domain              @relation(fields: [domainId], references: [id])
+  dimensions   MetierDimension[]
+  results      Result[]
+  interactions MetierInteraction[]
+}
+
+model MetierDimension {
+  id          String    @id @default(uuid())
+  metierId    String
+  metier      Metier    @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  dimensionId String
+  dimension   Dimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  weight      Float
+}
+
+model Domain {
+  id         String            @id @default(uuid())
+  name       String            @unique
+  metiers    Metier[]
+  dimensions DomainDimension[]
+  results    Result[]
+  courses    CourseDomain[]
+}
+
+model DomainDimension {
+  id          String    @id @default(uuid())
+  domainId    String
+  domain      Domain    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  dimensionId String
+  dimension   Dimension @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  weight      Float
+}
+
+model StudentDimension {
+  id             String         @id @default(uuid())
+  studentId      String
+  student        StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  dimensionId    String
+  dimension      Dimension      @relation(fields: [dimensionId], references: [id], onDelete: Cascade)
+  normalizedScore Float
+}
+
+model QuizAnswer {
+  id         String         @id @default(uuid())
+  studentId  String
+  student    StudentProfile @relation(fields: [studentId], references: [id])
+  questionId String
+  question   Question       @relation(fields: [questionId], references: [id])
+  optionId   String
+  option     Option         @relation(fields: [optionId], references: [id])
+  value      Int            @default(1)
+}
+
+model Result {
+  id            String         @id @default(uuid())
+  studentId     String
+  student       StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  domainId      String?
+  domain        Domain?        @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  metierId      String?
+  metier        Metier?        @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  compatibility Float
+}
+
+model Course {
+  id       String         @id // L'ID vient de l'autre microservice
+  domains  CourseDomain[]
+}
+
+model CourseDomain {
+  id       String @id @default(uuid())
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  domainId String
+  domain   Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+}
+
+model MetierInteraction {
+  id        String         @id @default(uuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  metierId  String
+  metier    Metier         @relation(fields: [metierId], references: [id], onDelete: Cascade)
+  liked     Boolean        // true = like, false = dislike
+  createdAt DateTime       @default(now())
+
+  @@unique([studentId, metierId]) // Un seul avis par métier par étudiant
+}
