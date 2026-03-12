@@ -406,6 +406,75 @@ async function main() {
   }
 
 
+  console.log('--- Récupération des courses depuis le catalog ---');
+  try {
+    const catalogCategoryMap = new Map<string, string>();
+    const catRes = await fetch('http://localhost:3005/catalog/categories');
+    if (catRes.ok) {
+      const categories: any[] = await catRes.json();
+      for (const cat of categories) {
+        catalogCategoryMap.set(cat.id, cat.name);
+      }
+      console.log(`✅ ${categories.length} catégories récupérées du catalog.`);
+    } else {
+      console.warn(`⚠️ Impossible de récupérer les catégories, status: ${catRes.status}`);
+    }
+
+    const res = await fetch('http://localhost:3005/catalog/courses');
+    if (res.ok) {
+      const courses: any[] = await res.json();
+      console.log(`✅ ${courses.length} courses récupérés.`);
+
+      for (const course of courses) {
+        await prisma.course.upsert({
+          where: { id: course.id },
+          update: {},
+          create: { id: course.id }
+        });
+
+        const domainIdentifiers = course.domainIds || course.domains || [];
+        for (const dId of domainIdentifiers) {
+          const catalogName = catalogCategoryMap.get(dId);
+          let realDomainId = catalogName ? dMap.get(catalogName) : undefined;
+
+          if (!realDomainId) {
+            realDomainId = dMap.get(dId);
+          }
+
+          if (!realDomainId) {
+            const existing = await prisma.domain.findUnique({ where: { id: dId } }).catch(() => null);
+            if (existing) {
+              realDomainId = existing.id;
+            } else {
+              const byName = await prisma.domain.findFirst({ where: { name: dId } }).catch(() => null);
+              if (byName) realDomainId = byName.id;
+            }
+          }
+
+          if (realDomainId) {
+            const existingCd = await prisma.courseDomain.findFirst({
+              where: { courseId: course.id, domainId: realDomainId }
+            });
+            if (!existingCd) {
+              await prisma.courseDomain.create({
+                data: {
+                  courseId: course.id,
+                  domainId: realDomainId
+                }
+              });
+            }
+          } else {
+            console.warn(`⚠️ Domaine non trouvé pour identifiant: ${dId} (catalog name: ${catalogName || 'inconnu'}) sur le course ${course.id}`);
+          }
+        }
+      }
+    } else {
+      console.warn(`⚠️ Impossible de récupérer les courses, status: ${res.status}`);
+    }
+  } catch (err) {
+    console.error(`⚠️ Erreur lors du fetch des courses:`, err);
+  }
+
   console.log('--- Seed terminé avec succès ! ---');
 }
 
