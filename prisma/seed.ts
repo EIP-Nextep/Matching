@@ -408,7 +408,19 @@ async function main() {
 
   console.log('--- Récupération des courses depuis le catalog ---');
   try {
-    const res = await fetch('http://localhost:3005/courses');
+    const catalogCategoryMap = new Map<string, string>();
+    const catRes = await fetch('http://localhost:3005/catalog/categories');
+    if (catRes.ok) {
+      const categories: any[] = await catRes.json();
+      for (const cat of categories) {
+        catalogCategoryMap.set(cat.id, cat.name);
+      }
+      console.log(`✅ ${categories.length} catégories récupérées du catalog.`);
+    } else {
+      console.warn(`⚠️ Impossible de récupérer les catégories, status: ${catRes.status}`);
+    }
+
+    const res = await fetch('http://localhost:3005/catalog/courses');
     if (res.ok) {
       const courses: any[] = await res.json();
       console.log(`✅ ${courses.length} courses récupérés.`);
@@ -422,7 +434,12 @@ async function main() {
 
         const domainIdentifiers = course.domainIds || course.domains || [];
         for (const dId of domainIdentifiers) {
-          let realDomainId = dMap.get(dId);
+          const catalogName = catalogCategoryMap.get(dId);
+          let realDomainId = catalogName ? dMap.get(catalogName) : undefined;
+
+          if (!realDomainId) {
+            realDomainId = dMap.get(dId);
+          }
 
           if (!realDomainId) {
             const existing = await prisma.domain.findUnique({ where: { id: dId } }).catch(() => null);
@@ -435,9 +452,6 @@ async function main() {
           }
 
           if (realDomainId) {
-            // Using upsert or checking if it exists to avoid unique constraint if there is one on courseDomain
-            // but the schema says @id @default(uuid()), courseId, domainId, no compound unique constraint
-            // To be safe, just create, or check if it already exists
             const existingCd = await prisma.courseDomain.findFirst({
               where: { courseId: course.id, domainId: realDomainId }
             });
@@ -450,7 +464,7 @@ async function main() {
               });
             }
           } else {
-            console.warn(`⚠️ Domaine non trouvé pour identifiant: ${dId} sur le course ${course.id}`);
+            console.warn(`⚠️ Domaine non trouvé pour identifiant: ${dId} (catalog name: ${catalogName || 'inconnu'}) sur le course ${course.id}`);
           }
         }
       }
