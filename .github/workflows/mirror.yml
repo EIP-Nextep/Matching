@@ -30,6 +30,6 @@ jobs:
           destination-repository-name: 'Nextep' 
           user-email: ${{ github.actor }}@users.noreply.github.com
           
-          target-directory: 'Matching' 
+          target-directory: 'Matchings' 
           
           target-branch: 'dev'
